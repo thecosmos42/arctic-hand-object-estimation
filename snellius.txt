@@ -1,0 +1,53 @@
+sinfo: To see all available nodes
+To run on a node: 
+CPU: srun --partition=rome --nodes=1 --ntasks=1 --cpus-per-task=16 --mem=60G --time=02:00:00 --pty bash -i
+
+GPU: srun --partition=gpu_a100 --nodes=1 --ntasks=1 --cpus-per-task=16 --mem=60G --time=1-00:00:00 --gpus=1 --pty bash -i
+
+Load modules: 
+module load 2023
+module load Anaconda3/2023.07-2
+
+conda create -n arctic_env python=3.10 -y
+conda activate arctic_env
+
+
+module load CUDA/12.1.1
+
+conda install pytorch=1.13.0 torchvision pytorch-cuda=11.6 -c pytorch -c nvidia --solver=libmamba
+
+
+
+For GUI:
+ssh -XY sc@snellius.surf.nl
+echo $DISPLAY
+srun --partition=gpu_a100 --nodes=1 --ntasks=1 --cpus-per-task=18 --gpus=1 --mem=60G --time=01:00:00 <<<--x11>>>IMP --pty bash -i
+
+export XDG_RUNTIME_DIR=/tmp/runtime-scur0805
+mkdir -p $XDG_RUNTIME_DIR
+
+
+command to use gpu and auto run the animation:
+
+export AITVIEWER_WINDOW_TYPE=glfw
+
+python scripts_data/process_seqs.py --mano_p ./data/arctic_data/data/raw_seqs/s01/capsulemachine_use_01.mano.npy --export_verts
+
+python scripts_data/visualizer.py --seq_p ./outputs/processed_verts/seqs/s01/capsulemachine_use_01.npy --object --mano --device cuda --autoplay
+
+
+
+To free up space:
+quota -s || true
+df -h "$HOME"
+du -sh "$HOME"/.cache/pip "$HOME"/.conda "$HOME"/.local "$HOME"/.vscode-server 2>/dev/null
+
+pip cache purge
+conda clean -a -y
+rm -rf "$HOME/.vscode-server" "$HOME/.vscode-server-insiders"
+
+
+
+
+python scripts/smoke_test_arctic_df.py --arctic_root ../arctic --split p1_train --eval_mode --index 0
+
