@@ -1,3 +1,18 @@
+import os
+os.environ["PYOPENGL_PLATFORM"] = "egl"
+os.environ.setdefault("EGL_DEVICE_ID", "0")
+
+# Force moderngl to use EGL standalone context
+import moderngl
+_original_create = moderngl.create_standalone_context
+
+def _egl_create(*args, **kwargs):
+    kwargs.pop("backend", None)
+    return _original_create(*args, backend="egl", **kwargs)
+
+moderngl.create_standalone_context = _egl_create
+
+
 import argparse
 import json
 import os.path as op
@@ -18,7 +33,7 @@ from common.viewer import ARCTICViewer
 class DataViewer(ARCTICViewer):
     def __init__(
         self,
-        render_types=["rgb", "depth", "mask"],
+        render_types=["rgb", "depth", "mask", "video"],
         interactive=True,
         size=(2024, 2024),
     ):
